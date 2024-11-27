@@ -68,52 +68,62 @@ class IdGenerator:
 
 
 class Model:
-    def __init__(self, db: BerkeleyDB) -> None:
-        self.db = db
-        self.id_generator = IdGenerator(db, self.table_name)
+    db = BerkeleyDB()
 
-    @property
-    def table_name(self):
-        return self.__class__.__name__
+    def __init__(self, cls_name: str) -> None:
+        self.table_name = cls_name
+        self.id_generator = IdGenerator(db, self.table_name)
 
     @property
     def table(self):
         return self.db.get_collection(self.table_name)
 
-    def save(self, key, obj):
-        obj_json = asdict(obj)
+    def save(self, key):
+        obj_json = asdict(self)
         self.table.put(orjson.dumps(key), orjson.dumps(obj_json))
 
     def get(self, key):
         return self.table.get(orjson.dumps(key))
 
 
-class VideoFileStreamsModel(Model):
-    def __init__(self, db: BerkeleyDB) -> None:
-        super().__init__(db)
+@dataclass
+class VideoFileStream(Model):
+    id: int = 0
+    file_path: str = ""
+    stream_path: str = ""
+    video_options = {}
+    stream_options = {}
 
-    @dataclass
-    class VideoFileStream:
-        id: int = 0
-        file_path: str = ""
-        stream_path: str = ""
-        video_options = {}
-        stream_options = {}
+    def __init__(self) -> None:
+        super().__init__(self.__class__.__name__)
 
 
 def main():
-    db = BerkeleyDB()
+    Model.db = BerkeleyDB()
 
-    vfs_model = VideoFileStreamsModel(db)
+    # vfs_model = VideoFileStreamsModel(db)
 
-    id = vfs_model.id_generator.next_id
-    vfs = vfs_model.VideoFileStream(
-        id=id, file_path="/video", stream_path=f"mocked_stream_{id}"
-    )
-    vfs_model.save(vfs.file_path, vfs)
+    # id = vfs_model.id_generator.next_id
+    # vfs = vfs_model.VideoFileStream(
+    #     id=id, file_path="/video", stream_path=f"mocked_stream_{id}"
+    # )
+    # vfs_model.save(vfs.file_path, vfs)
 
-    value = vfs_model.get(vfs.file_path)
-    print(value)
+    # value = vfs_model.get(vfs.file_path)
+    # print(value)
+
+    vfs = VideoFileStream(db=db)
+    vfs.id = vfs.id_generator.next_id
+    vfs.file_path = "/video/town.mp4"
+    vfs.stream_path = f"mocked_stream_{vfs.id}"
+
+    print(f"object name: {vfs.__class__.__name__}")
+
+    print(f"class name:{VideoFileStream.self_name()}")
+
+    vfs.save(vfs.file_path)
+
+    print(vfs.get("/video/town.mp4"))
 
 
 if __name__ == "__main__":
