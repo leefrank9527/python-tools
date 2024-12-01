@@ -72,7 +72,7 @@ class Model:
 
     def __init__(self, cls_name: str) -> None:
         self.table_name = cls_name
-        self.id_generator = IdGenerator(db, self.table_name)
+        self.id_generator = IdGenerator(self.db, cls_name)
 
     @property
     def table(self):
@@ -84,6 +84,9 @@ class Model:
 
     def get(self, key):
         return self.table.get(orjson.dumps(key))
+
+    def next_id(self):
+        return self.id_generator.next_id
 
 
 @dataclass
@@ -112,14 +115,12 @@ def main():
     # value = vfs_model.get(vfs.file_path)
     # print(value)
 
-    vfs = VideoFileStream(db=db)
+    vfs = VideoFileStream()
     vfs.id = vfs.id_generator.next_id
     vfs.file_path = "/video/town.mp4"
     vfs.stream_path = f"mocked_stream_{vfs.id}"
 
     print(f"object name: {vfs.__class__.__name__}")
-
-    print(f"class name:{VideoFileStream.self_name()}")
 
     vfs.save(vfs.file_path)
 
